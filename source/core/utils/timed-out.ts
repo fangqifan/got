@@ -1,9 +1,9 @@
 import net = require('net');
-import {ClientRequest, IncomingMessage} from 'http';
+import { ClientRequest, IncomingMessage } from 'http';
 import unhandler from './unhandle';
 
 const reentry: unique symbol = Symbol('reentry');
-const noop = (): void => {};
+const noop = (): void => { };
 
 interface TimedOutOptions {
 	host?: string;
@@ -49,7 +49,7 @@ export default (request: ClientRequest, delays: Delays, options: TimedOutOptions
 
 	request[reentry] = true;
 	const cancelers: Array<typeof noop> = [];
-	const {once, unhandleAll} = unhandler();
+	const { once, unhandleAll } = unhandler();
 
 	const addTimeout = (delay: number, callback: (delay: number, event: string) => void, event: string): (typeof noop) => {
 		const timeout = setTimeout(callback, delay, delay, event) as unknown as NodeJS.Timeout;
@@ -65,10 +65,13 @@ export default (request: ClientRequest, delays: Delays, options: TimedOutOptions
 		return cancel;
 	};
 
-	const {host, hostname} = options;
+	const { host, hostname } = options;
 
 	const timeoutHandler = (delay: number, event: string): void => {
 		request.destroy(new TimeoutError(delay, event));
+		if ((request as any).agent?.proxyOptions !== undefined) {
+			request.emit('error', new TimeoutError(delay, event))
+		}
 	};
 
 	const cancelTimeouts = (): void => {
@@ -115,7 +118,7 @@ export default (request: ClientRequest, delays: Delays, options: TimedOutOptions
 	}
 
 	once(request, 'socket', (socket: net.Socket): void => {
-		const {socketPath} = request as ClientRequest & {socketPath?: string};
+		const { socketPath } = request as ClientRequest & { socketPath?: string };
 
 		/* istanbul ignore next: hard to test */
 		if (socket.connecting) {
